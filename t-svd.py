@@ -1,6 +1,21 @@
 import numpy as np
 
 
+def tnorm(A):
+    uA = unfold(A)
+    uA_norm = np.linalg.norm(uA, 'fro')
+    return uA_norm
+
+
+def identity_tensor(shape, data_type=np.int32):
+    # I shape must be (m,m,n),and whose first frontal slice is the m×m identity matrix,
+    # and whose other frontal slices are all zeros.
+    Z = np.zeros(shape, data_type)
+    Z[:, :, 0] = np.eye(shape[0])
+    I = Z
+    return I
+
+
 def unfold(A, dim=1, t=False):
     # dim=1 frontal slides
     # dim=2 lateral slides
@@ -68,14 +83,46 @@ def circ_m(mat, shape):
         idx[i] = mat[base:end, ::]
         base = end
         end = base + cursor
-
-    # circ_mat = circ(idx)
-    # circ_mat = unfold(circ_mat, dim=1)
     circ_mat = unfold(circ(idx))
     return circ_mat
 
 
+def bcirc(A):
+    uA = unfold(A, 1)
+    bcA = np.transpose(circ_m(uA, A.shape))
+    return bcA
+
+
+def squeeze(A):
+    # the shape of tensor A is (m,1,n)
+    # A is squeezed to a (m,n) matrix!
+    if A.shape[1] != 1:
+        raise TypeError('shape error')
+    sqeA = np.reshape(A, (A.shape[0], A.shape[2]))
+    return sqeA
+
+
+def twist(mat):
+    # matrix shape is (m,n)
+    # matrix is twisted to a (m,1,n) tensor.
+    T = np.reshape(mat, (mat.shape[0], 1, mat.shape[1]))
+    return T
+
+
+def t_product(A, B):
+
+    shape = (A.shape[0], B.shape[1], A.shape[2])
+    uA = unfold(A, 1)
+    cA = circ_m(uA, A.shape)
+    uB = unfold(B, 1)
+    result = np.matmul(np.transpose(cA), uB)
+    tmp = fold(result, shape)
+    return tmp
+    # return fold(circ_m(unfold(A, 1), A.shape)* unfold(B, 1)), shape)
+
+
 def t_svd(M, shape):
+
     dim = len(shape)
     seq = list(range(2, dim))
     rou = 1
@@ -111,22 +158,36 @@ def t_svd(M, shape):
     return U, S, V
 
 
-def t_product(A, B):
+# A = np.random.rand(2, 3, 3)
+# B = np.random.rand(3, 4, 3)
+# C = np.random.rand(8, 1, 9)
 
-    shape = (A.shape[0], B.shape[1], A.shape[2])
-    uA = unfold(A, 1)
-    cA = circ_m(uA, A.shape)
-    uB = unfold(B, 1)
-    result = np.matmul(np.transpose(cA), uB)
-    tmp = fold(result, shape)
-    return tmp
-    # return fold(circ_m(unfold(A, 1), A.shape)* unfold(B, 1)), shape)
+X = np.reshape(np.arange(12), (3, 1, 4))
+
+A = [[[1, 0],
+      [0, 2],
+      [-1, 3]],
+     [[-2, 1],
+      [-2, 7],
+      [0, -1]]]
+
+B1 = [[3],
+     [-1]]
+
+B2 = [[-2],
+      [-3]]
+
+Bb = [[3],
+      [-1],
+      [-2],
+      [-3]]
+
+c = np.reshape(np.arange(4), (1, 1, 4))
+
+r = squeeze(t_product(X, c))
+rr = np.matmul(squeeze(X), bcirc(transpose(c)))
 
 
-A = np.random.rand(5, 7, 9)
-B = np.random.rand(7, 10, 9)
-c = t_product(A, B)
-
-print(c.shape)
-
+print(r)
+print(rr)
 
