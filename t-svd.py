@@ -120,20 +120,13 @@ def t_product(A, B):
     result = np.matmul(np.transpose(cA), uB)
     tmp = fold(result, shape)
     return tmp
-
     # return fold(circ_m(unfold(A, 1), A.shape)* unfold(B, 1)), shape)
 
 
-'''
+A = np.random.rand(5, 7, 9)
+B = np.random.rand(7, 10, 9)
+c = t_product(A, B)
 
-#M_t3 = M_t2[:, :, :]
-'''
-A = np.random.rand(2, 4, 3)
-B = np.random.rand(4, 5, 3)
+print(c.shape)
 
-'''
-
-a = circ([1, 2, 3, 4])
-print(a)
-'''
 
