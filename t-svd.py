@@ -187,7 +187,3 @@ c = np.reshape(np.arange(4), (1, 1, 4))
 r = squeeze(t_product(X, c))
 rr = np.matmul(squeeze(X), bcirc(transpose(c)))
 
-
-print(r)
-print(rr)
-
