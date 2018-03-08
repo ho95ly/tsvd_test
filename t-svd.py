@@ -121,11 +121,15 @@ def circ_m(mat, shape):
         end = base + cursor
     circ_mat = circ(idx)
 
-    rb_num = circ_mat.shape[0]
-    # if len(circ_mat.shape) == 2:
-    #    circ_vec = circ(list(circ_mat))
-    #    return circ_vec
+    if len(circ_mat.shape) == 2:
+        if circ_mat.shape[0] == 1 or circ_mat.shape[1] == 1:  # vector
+            circ_vec = circ(list(circ_mat))
+            return circ_vec
+        else:
+            # matrix
+            return circ_mat
 
+    rb_num = circ_mat.shape[0]
     unfold_mat = circ_mat[0, :, :]
     seq = list(range(1, rb_num))
     for i in seq:
@@ -221,6 +225,16 @@ def test_fft(Q):
     return True
 
 
+def svd_recover(mat):
+    u,s,v = np.linalg.svd(mat)
+    ss = np.zeros(mat.shape)
+    for i in range(s.shape[0]):
+        ss[i][i] = s[i]
+    r_mat = np.matmul(np.matmul(u, ss), np.transpose(v))
+    e_mat = np.array([x-y for x, y in zip(mat, r_mat)]).reshape(mat.shape)
+    return r_mat, e_mat
+
+
 def t3d_svd(A, part_keep=None):  # only for the three dimensions tensor
     '''
     dim = len(shape)
@@ -298,7 +312,7 @@ def t3d_svd(A, part_keep=None):  # only for the three dimensions tensor
 
     if part_keep == 'r':  # only keep real part
         return np.real(Ur), np.real(Sr), np.real(Vr)
-    else:  # real part + imaginary part
+    else:  # real part + imaginary partz
         return Ur, Sr, Vr
 
 
@@ -316,6 +330,7 @@ B = [[[3], [-1]],
 a = np.array(A)
 b = np.array(B)
 
+
 X = np.arange(12).reshape(3, 4, 1)
 c = np.arange(3).reshape(3, 1, 1)
 r = squeeze(t_product(X, c))
@@ -323,6 +338,10 @@ rr = np.matmul(squeeze(X), bcirc(transpose(c)))
 print(r)
 print(rr)
 
+M = np.arange(3).reshape(1, 3, 1)
+Mb = bcirc(M)
+print(Mb)
+print(Mb.shape)
 '''
 Q = np.reshape(np.arange(24), (2, 3, 4))
 a, b, c = t3d_svd(Q, 'r')
@@ -334,10 +353,10 @@ print(c.shape)
 print(c)
 
 print(Q)
+print(Q.shape)
 qqq = t_product(t_product(a, b), transpose(c))
 print(qqq.shape)
 print(qqq.astype(np.int32))
-
 '''
 
 '''
