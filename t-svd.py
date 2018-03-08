@@ -194,34 +194,61 @@ def t_product(A, B):
     return fold(tmp_mat, shape)
 
 
-def t_svd(M, shape):
+def test_fft(Q):
+    max_dim = max(list(Q.shape))
+    shape_len = len(Q.shape)
+    J = [j for j in range(1, max_dim+1)]
+    I = [i for i in range(shape_len)]
+    print(Q)
+    for i in I:
+        for j in J:
+            print('n =', j, 'axis =', i)
+            Qn = np.fft.fft(Q, n=None, axis=i)
+            Q_fft = np.fft.fft(Q, n=j, axis=i)
+            Qn_ifft = np.fft.ifft(Qn, n=None, axis=i)
+            Q_fft_ifft = np.fft.ifft(Q_fft, n=j, axis=i)
+            print('fft---------------')
+            print(Q_fft.shape)
+            print(Q_fft)
+            print(Qn.shape)
+            print(Qn)
+            print('ifft++++++++++++++')
+            print(Qn_ifft.shape)
+            print(Qn_ifft)
+            print(Q_fft_ifft.shape)
+            print(Q_fft_ifft)
+            print('==================')
+    return True
 
+
+def t3d_svd(A, part_keep=None):  # only for the three dimensions tensor
+    '''
     dim = len(shape)
     seq = list(range(2, dim))
     rou = 1
 
-    U_ht = np.zeros((shape[0], shape[0], shape[2]), dtype=np.complex128)
-    V_ht = np.zeros((shape[1], shape[1], shape[2]), dtype=np.complex128)
-    tmp = min(shape[0], shape[1])
-    S_ht = np.zeros((shape[0], shape[1], shape[2]), dtype=np.complex128)
-    S_tmp = np.zeros((tmp, tmp, shape[2]))
+    U_ht = np.zeros((shape[2], shape[1], shape[0]), dtype=np.complex128)
+    V_ht = np.zeros((shape[2], shape[2], shape[0]), dtype=np.complex128)
+    tmp = min(shape[1], shape[2])
+    S_ht = np.zeros((shape[1], shape[2], shape[0]), dtype=np.complex128)
+    S_tmp = np.zeros((tmp, tmp, shape[0]))
 
     for i in seq:
             rou = rou * shape[i]
 
-    D = np.fft.fft(M)
+    D = np.fft.fft(A)
 
     for i in range(0, rou):
-        u, s, v = np.linalg.svd(D[:, :, i])
-        U_ht[:, :, i] = u
-        S_tmp[:, :, i] = np.diag(s)
-        if tmp == shape[0]:
-            add_mat = np.zeros((shape[0], shape[1]-shape[0]))
-            S_ht[:, :, i] = np.column_stack((S_tmp[:, :, i], add_mat))
+        u, s, v = np.linalg.svd(D[i, :, :])
+        U_ht[i, :, :] = u
+        S_tmp[i, :, :] = np.diag(s)
+        if tmp == shape[1]:
+            add_mat = np.zeros((shape[1], shape[2]-shape[1]))
+            S_ht[i, :, :] = np.column_stack((S_tmp[i, :, :], add_mat))
         else:
-            add_mat = np.zeros((shape[0]-shape[1], shape[1]))
-            S_ht[:, :, i] = np.row_stack((S_tmp[:, :, i], add_mat))
-        V_ht[:, :, i] = v
+            add_mat = np.zeros((shape[1]-shape[2], shape[2]))
+            S_ht[i, :, :] = np.row_stack((S_tmp[i, :, :], add_mat))
+        V_ht[i, :, :] = v
 
     # for i in range(2, rou):
     U = np.fft.ifft(U_ht)
@@ -229,8 +256,53 @@ def t_svd(M, shape):
     V = np.fft.ifft(V_ht)
 
     return U, S, V
+    '''
+    # D=fft(A,[],3)
+    # Axis over which to compute the FFT. If not given, the last axis is used.
+    # tensor shape :(a,b,c)
+    # shape[0]== 3rd dimension
+    # shape[1]== 1st dimension
+    # shape[2]== 2nd dimension
+    # so that we should write as below:
+    # A(l,p,n)-->shape is (n,l,p)
+    # Axis over which to compute the FFT. If not given, the last axis is used.
+    # The algorithm use 3rd dimension ,so axis is set as 0
+    U = np.zeros((A.shape[0], A.shape[1], A.shape[1]), dtype=np.complex128)
+    V = np.zeros((A.shape[0], A.shape[2], A.shape[2]), dtype=np.complex128)
+    min_dim = min(A.shape[1], A.shape[2])
+    S = np.zeros(A.shape, dtype=np.complex128)
+    S_part = np.zeros((A.shape[0], min_dim, min_dim), dtype=np.complex128)
+
+    D = np.fft.fft(A, n=None, axis=0)
+
+    for i in range(A.shape[0]):
+        u, s, v = np.linalg.svd(D[i, :, :])  # SVD algorithm
+        # u shape:(A.shape[1],A.shape[1])
+        # s shape:(min(A.shape[1],A.shape[2]),)
+        # v shape:(A.shape[2],A.shape[2])
+        U[i, :, :] = u
+        S_part[i, :, :] = np.diag(s)
+        if A.shape[1] == A.shape[2]:
+            S[i, :, :] = S_part[i, :, :]
+        elif min_dim == A.shape[1]:
+            add_mat = np.zeros((A.shape[1], A.shape[2] - A.shape[1]))
+            S[i, :, :] = np.column_stack((S_part[i, :, :], add_mat))
+        else:
+            add_mat = np.zeros((A.shape[1] - A.shape[2], A.shape[2]))
+            S[i, :, :] = np.row_stack((S_part[i, :, :], add_mat))
+        V[i, :, :] = v
+
+    Ur = np.fft.ifft(U, n=None, axis=0)
+    Sr = np.fft.ifft(S, n=None, axis=0)
+    Vr = np.fft.ifft(V, n=None, axis=0)
+
+    if part_keep == 'r':  # only keep real part
+        return np.real(Ur), np.real(Sr), np.real(Vr)
+    else:  # real part + imaginary part
+        return Ur, Sr, Vr
 
 
+'''
 A = [[[1, 0],
       [0, 2],
       [-1, 3]],
@@ -243,18 +315,29 @@ B = [[[3], [-1]],
 
 a = np.array(A)
 b = np.array(B)
-Q = np.reshape(np.arange(24), (2, 3, 4))
 
-'''
-
-
-'''
 X = np.arange(12).reshape(3, 4, 1)
 c = np.arange(3).reshape(3, 1, 1)
 r = squeeze(t_product(X, c))
 rr = np.matmul(squeeze(X), bcirc(transpose(c)))
 print(r)
 print(rr)
+
+'''
+Q = np.reshape(np.arange(24), (2, 3, 4))
+a, b, c = t3d_svd(Q, 'r')
+print(a.shape)
+print(a)
+print(b.shape)
+print(b)
+print(c.shape)
+print(c)
+
+print(Q)
+qqq = t_product(t_product(a, b), transpose(c))
+print(qqq.shape)
+print(qqq.astype(np.int32))
+
 '''
 
 '''
