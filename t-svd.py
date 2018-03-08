@@ -5,7 +5,7 @@ import numpy as np
 # shape[1]== 1st dimension
 # shape[2]== 2nd dimension
 
-def tnorm(A):
+def t_norm(A):
     uA = unfold(A)
     uA_norm = np.linalg.norm(uA, 'fro')
     return uA_norm
@@ -69,15 +69,14 @@ def transpose(A):
     # If A is l×m×n, then At is the m×l×n tensor obtained by
     # transposing each of the frontal slices
     # and then reversing the order of transposed frontal slices 2 through n.
-    # this equivalence squeeze(X*c) = squeeze(X)bcirc(ct) is wrong?
-
     rb_num = A.shape[0]
     unfold_mat = np.transpose(A[0, :, :])
     seq = reversed(list(range(1, rb_num)))
     for i in seq:
         unfold_mat = np.row_stack((unfold_mat, np.transpose(A[i, :, :])))
-    shape_t = (A.shape[1], A.shape[0], A.shape[2])
-    return np.reshape(unfold_mat, shape_t)
+    shape_t = (A.shape[0], A.shape[2], A.shape[1])
+    # return np.reshape(unfold_mat, shape_t)
+    return fold(unfold_mat, shape_t, dim=1)
 
 
 def circ(vec):
@@ -96,6 +95,7 @@ def circ(vec):
         circ_mat = np.column_stack((circ_mat, vec_tmp))
 
     return circ_mat
+
 
 def circ_v(vec, shape):
     # shape is tensor shape, mat is unfold(tensor)
@@ -122,8 +122,9 @@ def circ_m(mat, shape):
     circ_mat = circ(idx)
 
     rb_num = circ_mat.shape[0]
-    if len(circ_mat.shape) == 2:
-        return circ_mat
+    # if len(circ_mat.shape) == 2:
+    #    circ_vec = circ(list(circ_mat))
+    #    return circ_vec
 
     unfold_mat = circ_mat[0, :, :]
     seq = list(range(1, rb_num))
@@ -136,8 +137,6 @@ def circ_m(mat, shape):
 def bcirc(A):
 
     uA = unfold(A, 1)
-    # if A.shape[1] == 1 and A.shape[2] == 1:
-    #    pass
     bcA = circ_m(uA, A.shape)
 
     return bcA
@@ -239,78 +238,23 @@ A = [[[1, 0],
       [-2, 7],
       [0, -1]]]
 
-B1 = [[3],
-      [-1]]
-
-B2 = [[-2],
-      [-3]]
-B =[[[3], [-1]],
-    [[-2], [-3]]]
-
-# r = squeeze(t_product(X, c))
-# rr = np.matmul(squeeze(X), bcirc(transpose(c)))
+B = [[[3], [-1]],
+     [[-2], [-3]]]
 
 a = np.array(A)
 b = np.array(B)
 Q = np.reshape(np.arange(24), (2, 3, 4))
 
 '''
-a1 = unfold(Q, dim=1)
-a2 = unfold(Q, dim=2)
-a3 = unfold(Q, dim=3)
-a11 = fold(a1, Q.shape, 1)
-a22 = fold(a2, Q.shape, 2)
-a33 = fold(a3, Q.shape, 3)
-q = transpose(Q)
-p = circ_m(unfold(Q, 1), (2, 3, 4))
-print(Q)
-print(a2)
-print(a22)
-s = np.reshape(np.arange(12), (4, 3, 1))
-print(s)
 
-ss = squeeze(s)
-print(ss.shape)
-
-sst = twist(ss)
-print(sst)
-
-print(a.shape)
-print(b.shape)
-
-
-aa = np.arange(120).reshape(3,5,8)
-bb = np.arange(240).reshape(3,8,10)
-
-t = t_product(aa, bb)
-print(t)
-
-tmp = t_product(X, c)
-stmp = squeeze(tmp)
-print(stmp.shape)
-Xs = squeeze(X)
-print(Xs.shape)
 
 '''
-
 X = np.arange(12).reshape(3, 4, 1)
 c = np.arange(3).reshape(3, 1, 1)
-
-tmp = t_product(X, c)
-stmp = squeeze(tmp)
-print(stmp)
-Xs = squeeze(X)
-# transpose operator seems not correct.
-ct = transpose(c)
-cb = bcirc(ct)
-cbc = circ(list(cb))
-print(cbc)
-# If A is l×m×n, then At is the m×l×n tensor obtained by
-# transposing each of the frontal slices
-# and then reversing the order of transposed frontal slices 2 through n.
-# this equivalence squeeze(X*c) = squeeze(X)bcirc(ct) is wrong?
-result = np.matmul(Xs, cbc)
-print(result)
+r = squeeze(t_product(X, c))
+rr = np.matmul(squeeze(X), bcirc(transpose(c)))
+print(r)
+print(rr)
 '''
 
 '''
