@@ -226,13 +226,21 @@ def test_fft(Q):
 
 
 def svd_recover(mat):
-    u,s,v = np.linalg.svd(mat)
-    ss = np.zeros(mat.shape)
-    for i in range(s.shape[0]):
-        ss[i][i] = s[i]
-    r_mat = np.matmul(np.matmul(u, ss), np.transpose(v))
+    u, s, v = np.linalg.svd(mat)
+    print(u)
+    print(s)
+    print(v)
+    ss = np.diag(s)
+    # ss = np.zeros((s.shape[0], 1))
+    # for i in range(s.shape[0]):
+    #     ss[i][0] = s[i]
+    tmp = np.matmul(u, ss)
+    r_mat = np.matmul(tmp, np.transpose(v))
+    bbb = np.dot(u, np.dot(ss, v))
     e_mat = np.array([x-y for x, y in zip(mat, r_mat)]).reshape(mat.shape)
-    return r_mat, e_mat
+    bm = np.array([x - y for x, y in zip(mat, bbb)]).reshape(mat.shape)
+    # return r_mat, e_mat
+    return bbb, bm
 
 
 def t3d_svd(A, part_keep=None):  # only for the three dimensions tensor
@@ -312,9 +320,14 @@ def t3d_svd(A, part_keep=None):  # only for the three dimensions tensor
 
     if part_keep == 'r':  # only keep real part
         return np.real(Ur), np.real(Sr), np.real(Vr)
-    else:  # real part + imaginary partz
+    else:  # real part + imaginary part
         return Ur, Sr, Vr
-
+    # WARNING: recover formula is A = Ur*Sr*transpose(Vr)
+    # but check out the api document of numpy ,it does not use this formula.
+    # In numpy, the correct formula is np.dot(Ur, np.dot(Sr, Vr))
+    # Note the order of multiplying is opposite and Vr is not transposed.
+    # I don`t understand how it works.
+    # And use np.allclose() to compare original tensor and recover tensor.
 
 '''
 A = [[[1, 0],
@@ -342,7 +355,19 @@ M = np.arange(3).reshape(1, 3, 1)
 Mb = bcirc(M)
 print(Mb)
 print(Mb.shape)
+
+a = np.array(
+    [[1, 0, 1],
+     [0, 1, 1],
+     [0, 0, 0]]
+             )
+print(a.shape)
+r, e = svd_recover(a)
+print(r)
+print('----------------')
+print(e)
 '''
+
 Q = np.reshape(np.arange(24), (2, 3, 4))
 a, b, c = t3d_svd(Q, 'r')
 print(a.shape)
@@ -354,9 +379,10 @@ print(c)
 
 print(Q)
 print(Q.shape)
-qqq = t_product(t_product(a, b), transpose(c))
+qqq = t_product(a, t_product(b, c))
 print(qqq.shape)
-print(qqq.astype(np.int32))
+print(qqq)
 '''
+
 
 '''
