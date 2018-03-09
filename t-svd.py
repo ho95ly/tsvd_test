@@ -381,29 +381,24 @@ def normalize(A, tol=1e-1, part_keep='r'):
         raise ValueError('tensor shape is not correct.')
     if t_norm(A) == 0:
         raise ValueError('Ask nonzero tensor.')
-    # V = np.fft.fft(A, n=None, axis=0)
-    V = A.copy()
+    V = np.fft.fft(A, n=None, axis=0)
     a = np.zeros((A.shape[0], 1, 1))
     for j in range(0, A.shape[0]):
-        a[j, :, :] = np.linalg.norm(V[j, :, :], ord='fro')
-        if a[j, :, :] > tol:
-            V[j, :, :] = np.true_divide(V[j, :, :], a[j, :, :])  # wrong
+        a[j, 0, 0] = np.linalg.norm(V[j, :, :], ord='fro')
+        if a[j] > tol:
+            V[j, :, :] = np.true_divide(V[j, :, :], a[j, 0, 0])
         else:
-            V[j, :, :] = np.random.randn(A.shape[1], 1)
-            a[j, :, :] = np.linalg.norm(V[j, :, :])
-            V[j, :, :] = np.true_divide(V[j, :, :], a[j, :, :])
-            a[j, :, :] = 0
+            V[j, :, :] = np.random.randn(A.shape[0], 1)  # why shape[0]?
+            a[j, 0, 0] = np.linalg.norm(V[j, :, :], ord='fro')
+            V[j, :, :] = np.true_divide(V[j, :, :], a[j, 0, 0])
+            a[j, 0, 0] = 0
+    V_ifft = np.fft.ifft(V, n=None, axis=0)
+    a_ifft = np.fft.ifft(a, n=None, axis=0)
 
-    # V_ifft = np.fft.ifft(V, n=None, axis=0)
-    # a_ifft = np.fft.ifft(a, n=None, axis=0)
-    vv = V
-    aa = a
-
-    #if part_keep == 'r':
-     #   return np.real(V_ifft), np.real(a_ifft)
-    #else:
-     #   return V_ifft, a_ifft
-    return vv,aa
+    if part_keep == 'r':
+        return np.real(V_ifft), np.real(a_ifft)
+    else:
+        return V_ifft, a_ifft
 
 '''
 A = [[[1, 0],
@@ -446,19 +441,31 @@ X = np.arange(12).reshape(3, 4, 1)
     p = inside_product(X, Y)
     a = tubal_angle(X, Y)
     print(a)
-
-'''
-if __name__ == "__main__":
-    X = np.arange(12).reshape(3, 4, 1)
-    a, b = normalize(X, 1e-1, 'r')
+    
+X = np.arange(12).reshape(3, 4, 1)
+    v, a = normalize(X, 1e-1, 'r')
+    print(v)
+    print(v.shape)
     print(a)
     print(a.shape)
-    print(b)
-    print(b.shape)
-    p = t_product(a, b)
+    p = t_product(v, a)
     print(p)
     print(p.shape)
     print(X)
+'''
+if __name__ == "__main__":
+
+    X = np.arange(12).reshape(3, 4, 1)
+    Y = np.random.rand(3, 4, 1)
+    c = np.arange(3).reshape(3, 1, 1)
+
+    r = squeeze(t_product(X, c))
+    rr = np.matmul(squeeze(X), bcirc(transpose(c)))
+    print(Y)
+    print(r)
+    print(rr)
+
+
 
 '''
   
