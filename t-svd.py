@@ -348,6 +348,35 @@ def t3d_qr(A, part_keep='r'):
     else:
         return Q, R
 
+
+def inside_product(A, B):
+    # This definition suits for the tensor whose shape is (m,1,n)-->(n,m,1)
+    if A.shape[2] != 1 or B.shape[2] != 1:
+        raise ValueError('tensor shape is not correct.')
+    if A.shape != B.shape:
+        raise ValueError('shapes are not equal.')
+    a = t_product(transpose(A), B)
+    return a
+
+
+def tubal_angle(A, B):
+
+    if A.shape[2] != 1 or B.shape[2] != 1:
+        raise ValueError('tensor shape is not correct.')
+    if A.shape != B.shape:
+        raise ValueError('shapes are not equal.')
+
+    A_norm = t_norm(A)
+    B_norm = t_norm(B)
+    if A_norm == 0 or B_norm == 0:
+        raise ValueError('Ask nonzero tensor.')
+    k = np.dot(np.dot(A_norm, B_norm), 2)
+    s = inside_product(A, B)+inside_product(B, A)
+    angle = np.true_divide(np.fabs(s), k)
+    return angle
+
+
+
 '''
 A = [[[1, 0],
       [0, 2],
@@ -387,19 +416,12 @@ print('----------------')
 print(e)
 '''
 if __name__ == "__main__":
-    Q = np.reshape(np.arange(12), (1, 4, 3))
-    a, b = t3d_qr(Q, 'r')
-
+    X = np.arange(12).reshape(3, 4, 1)
+    Y = np.arange(12).reshape(3, 4, 1)
+    p = inside_product(X, Y)
+    a = tubal_angle(X, Y)
     print(a)
-    print(a.shape)
-    print(b)
-    print(b.shape)
 
-    p = t_product(a, b)
-
-    print(p)
-    print(p.shape)
-    print(Q)
 
 '''
   
