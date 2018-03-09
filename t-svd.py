@@ -329,6 +329,25 @@ def t3d_svd(A, part_keep=None):  # only for the three dimensions tensor
     # I don`t understand how it works.
     # And use np.allclose() to compare original tensor and recover tensor.
 
+
+def t3d_qr(A, part_keep='r'):
+    # A (l,p,n)-->(n,l,p)
+    if A.shape[1]<A.shape[2]:
+        raise ValueError('the shape of A is incorrect. Check the shape.')
+    Q_ht = np.zeros(A.shape, dtype=np.complex128)
+    R_ht = np.zeros((A.shape[0], A.shape[2], A.shape[2]), dtype=np.complex128)
+
+    A_ht = np.fft.fft(A, n=None, axis=0)
+    for i in range(0, A.shape[0]):
+        Q_ht[i, :, :], R_ht[i, :, :] = np.linalg.qr(A_ht[i, :, :],mode='reduced')
+    Q = np.fft.ifft(Q_ht, n=None, axis=0)
+    R = np.fft.ifft(R_ht, n=None, axis=0)
+
+    if part_keep == 'r':
+        return np.real(Q), np.real(R)
+    else:
+        return Q, R
+
 '''
 A = [[[1, 0],
       [0, 2],
@@ -367,22 +386,22 @@ print(r)
 print('----------------')
 print(e)
 '''
+if __name__ == "__main__":
+    Q = np.reshape(np.arange(12), (1, 4, 3))
+    a, b = t3d_qr(Q, 'r')
 
-Q = np.reshape(np.arange(24), (2, 3, 4))
-a, b, c = t3d_svd(Q, 'r')
-print(a.shape)
-print(a)
-print(b.shape)
-print(b)
-print(c.shape)
-print(c)
+    print(a)
+    print(a.shape)
+    print(b)
+    print(b.shape)
 
-print(Q)
-print(Q.shape)
-qqq = t_product(a, t_product(b, c))
-print(qqq.shape)
-print(qqq)
+    p = t_product(a, b)
+
+    print(p)
+    print(p.shape)
+    print(Q)
+
 '''
-
+  
 
 '''
