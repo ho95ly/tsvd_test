@@ -384,7 +384,7 @@ def t3d_svd(A, part_keep=None):  # only for the three dimensions tensor
 
 def t3d_qr(A, part_keep='r'):
     # A (l,p,n)-->(n,l,p)
-    if A.shape[1]<A.shape[2]:
+    if A.shape[1] < A.shape[2]:
         raise ValueError('the shape of A is incorrect. Check the shape.')
     Q_ht = np.zeros(A.shape, dtype=np.complex128)
     R_ht = np.zeros((A.shape[0], A.shape[2], A.shape[2]), dtype=np.complex128)
@@ -440,7 +440,7 @@ def normalize(A, tol=1e-1, part_keep='r'):
         if a[j] > tol:
             V[j, :, :] = np.true_divide(V[j, :, :], a[j, 0, 0])
         else:
-            V[j, :, :] = np.random.randn(A.shape[0], 1)  # why shape[0]?
+            V[j, :, :] = np.random.randn(A.shape[1], 1)  # why algorithm in paper set shape[0]?
             a[j, 0, 0] = np.linalg.norm(V[j, :, :], ord='fro')
             V[j, :, :] = np.true_divide(V[j, :, :], a[j, 0, 0])
             a[j, 0, 0] = 0
@@ -451,6 +451,43 @@ def normalize(A, tol=1e-1, part_keep='r'):
         return np.real(V_ifft), np.real(a_ifft)
     else:
         return V_ifft, a_ifft
+
+
+def gram_schmidt(A, tol=1e-1, part_keep='r'):
+    if A.shape[1] < A.shape[2]:
+        raise ValueError('the shape of A is incorrect. Check the shape.')
+    Q = np.zeros(A.shape)
+    R = np.zeros((A.shape[0], A.shape[2], A.shape[2]))
+    Q[:, :, 0:1], R[:, 0:1, 0:1] = normalize(A[:, :, 0:1], tol, part_keep)
+    for i in range(1, A.shape[2]):
+        X = A[:, :, i:i+1]
+        for j in range(i-1):
+            R[:, j:j+1, i:i+1] = t_product(transpose(Q[:, :, j:j+1]), X)
+            X = X - t_product(Q[:, :, j:j+1], R[:, j:j+1, i:i+1])
+        Q[:, :, i:i+1], R[:, i:i+1, i:i+1] = normalize(X, tol, part_keep)
+    return Q, R
+
+    # raise ValueError('this function is not function yet.')
+
+
+def power_iteration(A, step):  # don`t understand this function.Code according to the paper Alg4.
+    # A shape (n,m,m)
+    if A.shape[1] != A.shape[2]:
+        raise ValueError('1st and 2nd dimension is not equal.')
+    V = np.random.randn(A.shape[0], A.shape[1], 1)
+    v, a = normalize(V)
+    V = t_product(v, a)
+    for i in range(step):
+
+        V = t_product(A, V)
+        if t_norm(V) == 0:
+            print('V norm is equal zero.')
+            return d
+        v, a = normalize(V)
+        V = t_product(v, a)
+        d = t_product(transpose(V), t_product(A, V))
+    return d, V
+
 
 '''
 A = [[[1, 0],
@@ -466,11 +503,6 @@ a = np.array(A)
 b = np.array(B)
 
 
-X = np.arange(12).reshape(3, 4, 1)
-    Y = np.arange(12).reshape(3, 4, 1)
-    p = inside_product(X, Y)
-    a = tubal_angle(X, Y)
-    print(a)
     
 X = np.arange(12).reshape(3, 4, 1)
     v, a = normalize(X, 1e-1, 'r')
@@ -483,11 +515,7 @@ X = np.arange(12).reshape(3, 4, 1)
     print(p.shape)
     print(X)
     
-    
-    
-'''
-if __name__ == "__main__":
-    X = np.arange(12).reshape(3, 4, 1)
+       X = np.arange(12).reshape(3, 4, 1)
     v, a = normalize(X, 1e-1, 'r')
     print(v)
     print(v.shape)
@@ -499,10 +527,20 @@ if __name__ == "__main__":
     print(X)
 
 '''
- Y = np.random.rand(3, 4, 1)
-    # Y = np.arange(12).reshape(3, 1, 4)
-    print(Y)
-    p = bcirc(Y)
-    print(p)
-    print(p.shape)
+
+if __name__ == "__main__":
+    X = np.arange(24).reshape(3, 4, 2)
+    # X = np.random.rand(2, 3, 3)
+    a, b = gram_schmidt(X, 1e-1, 'r')
+    print(a)
+    print(a.shape)
+    print(b)
+    print(b.shape)
+    aa = t_product(a,b)
+    print(aa)
+    print(aa.shape)
+
+'''
+
+ 
 '''
