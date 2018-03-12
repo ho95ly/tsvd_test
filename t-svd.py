@@ -80,15 +80,24 @@ def transpose(A):
 
 
 def circ(vec):
-    # vec (type:list) is the transpose of a vector
-    # if type(vec) is list:
+    # vec type is a list.
+    # index length
     vec_len = len(vec)
+
+    # element is a array.
+    if type(vec[0]) is np.ndarray:
+        idx_map = list(range(vec_len))
+        circ_mat = idx_map
+        vec_tmp = idx_map.copy()
+        for i in range(0, vec_len - 1):
+            ele = vec_tmp.pop()
+            vec_tmp.insert(0, ele)
+            circ_mat = np.column_stack((circ_mat, vec_tmp))
+        return circ_mat
+
+    # element is number.
     circ_mat = vec
     vec_tmp = vec.copy()
-
-    if vec_len == 1 and type(vec[0]) is np.ndarray:
-        return circ_mat[0]
-
     for i in range(0, vec_len-1):
         ele = vec_tmp.pop()
         vec_tmp.insert(0, ele)
@@ -105,7 +114,7 @@ def circ_v(vec, shape):
     pass
 
 
-def circ_m(mat, shape):
+def circ_m(M, shape):
     # shape is tensor shape, mat is unfold(tensor)
     # shape :(a,b,c) shape[0]== 3rd dimension
     # shape[1]== 1st dimension
@@ -115,13 +124,18 @@ def circ_m(mat, shape):
     end = base + cursor
     idx = list(range(shape[0]))
 
+    if shape[0] == 1:
+        # tensor 3rd dimension is equal to 1,return the only slice directly.
+        return M[0]
+
+    # create circular sequence index
     for i in range(0, shape[0]):
-        idx[i] = mat[base:end, ::]
+        idx[i] = M[base:end, ::]
         base = end
         end = base + cursor
-    circ_mat = circ(idx)
-
-    if len(circ_mat.shape) == 2:
+    circ_mat = circ(idx)  # create circular map
+    '''
+     if len(circ_mat.shape) == 2:
         if circ_mat.shape[0] == 1 or circ_mat.shape[1] == 1:  # vector
             circ_vec = circ(list(circ_mat))
             return circ_vec
@@ -136,6 +150,44 @@ def circ_m(mat, shape):
         unfold_mat = np.column_stack((unfold_mat, circ_mat[i, :, :]))
 
     return unfold_mat
+    '''
+
+    circ_idx = list(np.reshape(circ_mat, -1))
+    circ_idx_tmp = circ_idx.copy()
+    circ_idx_len = len(circ_idx)
+    for i in range(circ_idx_len):
+        pos = circ_idx[i]
+        circ_idx_tmp[i] = idx[pos]
+
+    circ_idx_tmp_array = np.array(circ_idx_tmp)
+
+    if shape[2] == 1:  # tensor shape (n, m, 1)
+        cita_sq = squeeze(circ_idx_tmp_array)
+        cita_sqf = fold(cita_sq, (shape[0], shape[1], shape[0]), 3)
+        cita_sqfu = unfold(cita_sqf)
+        return cita_sqfu
+    else:  # tensor
+        part_idx_num = range(shape[0])
+        base2 = 0
+        cursor2 = circ_mat.shape[0]
+        end2 = base2 + cursor2
+        stack_idx = list(part_idx_num)
+
+        for i in part_idx_num:
+            part_tensor = circ_idx_tmp_array[base2:end2, :, :]
+            part_mat = part_tensor[0, :, :]
+            for j in range(1, shape[0]):
+                part_mat = np.column_stack((part_mat, part_tensor[j, :, :]))
+
+            base2 = end2
+            end2 = base2 + cursor2
+            stack_idx[i] = part_mat
+
+        merge_mat = stack_idx[0]
+        for i in range(1, shape[0]):
+            merge_mat = np.row_stack((merge_mat, stack_idx[i]))
+
+        return merge_mat
 
 
 def bcirc(A):
@@ -413,28 +465,6 @@ B = [[[3], [-1]],
 a = np.array(A)
 b = np.array(B)
 
-X = np.arange(12).reshape(3, 4, 1)
-c = np.arange(3).reshape(3, 1, 1)
-r = squeeze(t_product(X, c))
-rr = np.matmul(squeeze(X), bcirc(transpose(c)))
-print(r)
-print(rr)
-
-M = np.arange(3).reshape(1, 3, 1)
-Mb = bcirc(M)
-print(Mb)
-print(Mb.shape)
-
-a = np.array(
-    [[1, 0, 1],
-     [0, 1, 1],
-     [0, 0, 0]]
-             )
-print(a.shape)
-r, e = svd_recover(a)
-print(r)
-print('----------------')
-print(e)
 
 X = np.arange(12).reshape(3, 4, 1)
     Y = np.arange(12).reshape(3, 4, 1)
@@ -452,22 +482,27 @@ X = np.arange(12).reshape(3, 4, 1)
     print(p)
     print(p.shape)
     print(X)
+    
+    
+    
 '''
 if __name__ == "__main__":
-
     X = np.arange(12).reshape(3, 4, 1)
-    Y = np.random.rand(3, 4, 1)
-    c = np.arange(3).reshape(3, 1, 1)
-
-    r = squeeze(t_product(X, c))
-    rr = np.matmul(squeeze(X), bcirc(transpose(c)))
-    print(Y)
-    print(r)
-    print(rr)
-
-
+    v, a = normalize(X, 1e-1, 'r')
+    print(v)
+    print(v.shape)
+    print(a)
+    print(a.shape)
+    p = t_product(v, a)
+    print(p)
+    print(p.shape)
+    print(X)
 
 '''
-  
-
+ Y = np.random.rand(3, 4, 1)
+    # Y = np.arange(12).reshape(3, 1, 4)
+    print(Y)
+    p = bcirc(Y)
+    print(p)
+    print(p.shape)
 '''
