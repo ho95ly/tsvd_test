@@ -1,9 +1,9 @@
 import numpy as np
 
-
 # shape :(a,b,c) shape[0]== 3rd dimension
 # shape[1]== 1st dimension
 # shape[2]== 2nd dimension
+
 
 def t_norm(A):
     uA = unfold(A)
@@ -111,7 +111,7 @@ def circ_v(vec, shape):
     # shape :(a,b,c) shape[0]== 3rd dimension
     # shape[1]== 1st dimension
     # shape[2]== 2nd dimension
-    pass
+    raise ValueError('this function is not coded.use circ_m() function')
 
 
 def circ_m(M, shape):
